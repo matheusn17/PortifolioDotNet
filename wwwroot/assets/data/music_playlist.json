@@ -1,0 +1,32 @@
+[
+    {
+      "id" : 1,
+      "name" : "Flamingo",
+      "artist" : "Kero Kero Bonito",
+      "path" : "assets/audio/music_playlist/flamingo.mp3"
+    },
+    {
+      "id" : 2,
+      "name" : "Silent Hill 0 Horigins - Main Theme",
+      "artist" : "Konami",
+      "path" : "assets/audio/music_playlist/sh0.m4a"
+    },
+    {
+      "id" : 3,
+      "name" : "Okay, Everyone! - DDLC",
+      "artist" : "Team Salvato",
+      "path" : "assets/audio/music_playlist/ok_everyone.mp3"
+    },
+    {
+      "id" : 4,
+      "name" : "Town Theme",
+      "artist" : "cynicmusic",
+      "path" : "assets/audio/music_playlist/TownTheme.mp3"
+    },
+    {
+      "id" : 5,
+      "name" : "Crystal Cave",
+      "artist" : "cynicmusic",
+      "path" : "assets/audio/music_playlist/Crystal_Cave.mp3"
+    }
+]

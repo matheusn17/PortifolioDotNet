@@ -1,0 +1,117 @@
+@using System.Net.Http.Json
+@inject HttpClient httpClient
+@inject IJSRuntime JsRuntime
+
+@page "/musica"
+
+<PageTitle>Bem Vindo!</PageTitle>
+
+<MudPaper class="mb-5">
+    <MudToolBar>
+        <MudIconButton Icon="@Icons.Rounded.SkipPrevious" OnClick="PreviousTrack" Class="mr-5" />
+        <MudToggleIconButton Icon="@Icons.Rounded.PlayArrow" 
+                            ToggledIcon="@Icons.Rounded.Pause"
+                            Toggled="@isPlaying"
+                            ToggledChanged="PlayPause"
+                            Class="mr-5" />
+
+        <MudIconButton Icon="@Icons.Rounded.SkipNext" OnClick="NextTrack" Class="mr-5" />
+        <MudToggleIconButton Icon="@Icons.Rounded.Repeat"
+                            ToggledIcon="@Icons.Rounded.RepeatOn"
+                            @bind-Toggled="@isRepeat"
+                            Class="mr-5" />
+        <MudToggleIconButton Icon="@Icons.Rounded.Shuffle"
+                            ToggledIcon="@Icons.Rounded.ShuffleOn"
+                            @bind-Toggled="@isShuffle"
+                            Class="mr-5" />
+        <MudSpacer />
+        <MudSlider Value="@player_pos"></MudSlider>
+        <MudIconButton Icon="@Icons.Rounded.VolumeUp" Class="mr-5" />            
+    </MudToolBar>
+</MudPaper>
+
+<MudTable Items="@playlist" Hover="true" LoadingProgressColor="Color.Info" OnRowClick="@ChangeTrack" T="Track">
+    <HeaderContent>
+        <MudTh>Id</MudTh>
+        <MudTh>Nome</MudTh>
+        <MudTh>Artista</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Id">@context.id</MudTd>
+        <MudTd DataLabel="Nome">@context.name</MudTd>
+        <MudTd DataLabel="Artista">@context.artist</MudTd>
+    </RowTemplate>
+</MudTable>
+
+<!-- Mantenha os scritps na mesma pagina para uma visao melhor do código-->
+
+@code {
+    public bool isPlaying { get; set; }
+    public bool isRepeat { get; set; }
+    public bool isShuffle { get; set; }
+
+    double player_pos = 0;
+    double volume = 50.0;
+
+    private IEnumerable<Track> playlist = new List<Track>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        playlist = await httpClient.GetFromJsonAsync<List<Track>>("assets/data/music_playlist.json");
+        foreach (Track t in playlist){
+            await JsRuntime.InvokeVoidAsync("AudioPlayer.AddTrack", new {t.name, t.path} );
+        }
+    }
+
+    private void ChangeTrack(TableRowClickEventArgs<Track> t)
+    {
+        LoadTrack(t.Item.name);
+        isPlaying = true;
+    }
+
+    async void LoadTrack(String track_name){
+        await JsRuntime.InvokeVoidAsync("AudioPlayer.LoadTrack", track_name);
+    }
+
+    async void NextTrackShuffled(){
+        await JsRuntime.InvokeVoidAsync("AudioPlayer.NextTackShuffled");
+        isPlaying = true;
+    }
+
+    // Toolbar actions
+    async void PreviousTrack(){
+        if (isShuffle){
+            NextTrackShuffled();
+            return;
+        }
+        await JsRuntime.InvokeVoidAsync("AudioPlayer.PreviousTrack");
+        isPlaying = true;
+    }
+
+    async void NextTrack(){
+        if (isShuffle){
+            NextTrackShuffled();
+            return;
+        }
+        await JsRuntime.InvokeVoidAsync("AudioPlayer.NextTrack");
+        isPlaying = true;
+    }
+
+    async void PlayPause(bool state)
+    {       
+        isPlaying = state;
+
+        if(isPlaying){
+            await JsRuntime.InvokeVoidAsync("AudioPlayer.PlayTrack");
+        }else{
+            await JsRuntime.InvokeVoidAsync("AudioPlayer.PauseTrack");
+        }
+    }
+
+    public class Track{
+        public int id {get ; set; }
+        public String name {get ; set; }
+        public String artist {get ; set; }
+        public String path {get ; set; }
+    }
+}
