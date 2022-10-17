@@ -18,14 +18,15 @@
         <MudIconButton Icon="@Icons.Rounded.SkipNext" OnClick="NextTrack" Class="mr-5" />
         <MudToggleIconButton Icon="@Icons.Rounded.Repeat"
                             ToggledIcon="@Icons.Rounded.RepeatOn"
-                            @bind-Toggled="@isRepeat"
+                            Toggled="@isRepeat"
+                            ToggledChanged="SetRepeat"
                             Class="mr-5" />
         <MudToggleIconButton Icon="@Icons.Rounded.Shuffle"
                             ToggledIcon="@Icons.Rounded.ShuffleOn"
                             @bind-Toggled="@isShuffle"
                             Class="mr-5" />
         <MudSpacer />
-        <MudSlider Value="@player_pos"></MudSlider>
+        <MudSlider Value="@player_pos" ValueChanged="UpdatePlayerPos" T="double" Immediate="false"></MudSlider>
         <MudIconButton Icon="@Icons.Rounded.VolumeUp" Class="mr-5" />            
     </MudToolBar>
 </MudPaper>
@@ -50,8 +51,8 @@
     public bool isRepeat { get; set; }
     public bool isShuffle { get; set; }
 
-    double player_pos = 0;
-    double volume = 50.0;
+    double player_pos { get; set; } = 0;
+    double volume { get; set; } = 50.0;
 
     private IEnumerable<Track> playlist = new List<Track>();
 
@@ -78,21 +79,38 @@
         isPlaying = true;
     }
 
+    async void RepeatTrack(){
+        await JsRuntime.InvokeVoidAsync("AudioPlayer.RepeatTrack");
+        isPlaying = true;
+    }
+
     // Toolbar actions
     async void PreviousTrack(){
+        if (isRepeat){
+            RepeatTrack();
+            return;
+        }
+        
         if (isShuffle){
             NextTrackShuffled();
             return;
         }
+        
         await JsRuntime.InvokeVoidAsync("AudioPlayer.PreviousTrack");
         isPlaying = true;
     }
 
     async void NextTrack(){
+        if (isRepeat){
+            RepeatTrack();
+            return;
+        }
+
         if (isShuffle){
             NextTrackShuffled();
             return;
         }
+
         await JsRuntime.InvokeVoidAsync("AudioPlayer.NextTrack");
         isPlaying = true;
     }
@@ -106,6 +124,16 @@
         }else{
             await JsRuntime.InvokeVoidAsync("AudioPlayer.PauseTrack");
         }
+    }
+
+    async void UpdatePlayerPos(double value){
+        player_pos = value;
+        await JsRuntime.InvokeVoidAsync("AudioPlayer.SetMusicPos", player_pos );
+    }
+    
+    async void SetRepeat(bool value){
+        isRepeat = value;
+        await JsRuntime.InvokeVoidAsync("AudioPlayer.SetTrackLoop", isRepeat );
     }
 
     public class Track{
