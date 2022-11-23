@@ -1,4 +1,5 @@
 @using System.Net.Http.Json
+@using System.Globalization
 @inject HttpClient httpClient
 @inject IJSRuntime JsRuntime
 
@@ -26,7 +27,7 @@
                             @bind-Toggled="@isShuffle"
                             Class="mr-5" />
         <MudSpacer />
-        <MudSlider Value="@player_pos" ValueChanged="UpdatePlayerPos" T="double" Immediate="false"></MudSlider>
+        <MudSlider Value="@player_pos" ValueChanged="SetPlayerPos" T="double" Immediate="true" Step="0.01"></MudSlider>
         <MudIconButton Icon="@Icons.Rounded.VolumeUp" Class="mr-5" />            
     </MudToolBar>
 </MudPaper>
@@ -52,9 +53,11 @@
     public bool isShuffle { get; set; }
 
     double player_pos { get; set; } = 0;
+    bool player_pos_autoupdate_flag { get; set;} = false;
     double volume { get; set; } = 50.0;
 
     private IEnumerable<Track> playlist = new List<Track>();
+    private Timer _timer;
 
     protected override async Task OnInitializedAsync()
     {
@@ -62,7 +65,13 @@
         foreach (Track t in playlist){
             await JsRuntime.InvokeVoidAsync("AudioPlayer.AddTrack", new {t.name, t.path} );
         }
-    }
+
+        _timer = new Timer(
+                            e => UpdatePlayerPos(),  
+                            null, 
+                            TimeSpan.Zero, 
+                            TimeSpan.FromMilliseconds(100));
+                            }
 
     private void ChangeTrack(TableRowClickEventArgs<Track> t)
     {
@@ -126,9 +135,24 @@
         }
     }
 
-    async void UpdatePlayerPos(double value){
-        player_pos = value;
-        await JsRuntime.InvokeVoidAsync("AudioPlayer.SetMusicPos", player_pos );
+    async void SetPlayerPos(double value){
+        if(!player_pos_autoupdate_flag){
+            player_pos = value;
+            await JsRuntime.InvokeVoidAsync("AudioPlayer.SetMusicPos", player_pos );
+        }
+
+        player_pos_autoupdate_flag = false;
+    }
+
+    async void UpdatePlayerPos(){
+        var value = await JsRuntime.InvokeAsync<object>("AudioPlayer.GetMusicPos", null );
+        double temp_player_pos;
+        
+        Double.TryParse(value.ToString(), NumberStyles.Number, CultureInfo.InvariantCulture, out temp_player_pos);
+        player_pos = temp_player_pos;
+        player_pos_autoupdate_flag = true;
+        
+        StateHasChanged();
     }
     
     async void SetRepeat(bool value){

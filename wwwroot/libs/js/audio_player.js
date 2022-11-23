@@ -89,6 +89,10 @@ AudioPlayer.SetMusicPos = function(pos){
     this.CurrentTrack.track.currentTime = pos;
 }
 
+AudioPlayer.GetMusicPos = function(){
+    return (this.CurrentTrack.track.currentTime / this.CurrentTrack.track.duration * 100) || 0;
+}
+
 AudioPlayer.RepeatTrack = function(){
     this.SetMusicPos(0);
     this.CurrentTrack.track.play();
